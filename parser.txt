@@ -1,0 +1,55 @@
+
+Las pruebas.
+
+select distinct * from tabla1 t1, t2, tabla3 t3           -- 1 SUCCESS
+select a, b, c from tabla1 t1, t2,, t3                    -- 2 FAILURE
+select a, schema.tables from t where (not "hello")        -- 3 SUCCESS
+select a, (1, 2, 3) from t                                -- 4 FAILURE
+select a, "string"(1, 2, "text") from t                   -- 5 SUCCESS
+select a b from t where 0                                 -- 6 FAILURE
+select csv.sum(), b from t where (((c <> nil and -true))) -- 7 SUCCESS
+select a, b from t where c, d                             -- 8 FAILURE
+select col1, col2.a from t where func(1/6+1, 2, 3)        -- 9 SUCCESS
+select a from where                                       -- 0 FAILURE
+
+Resultados.
+
+>> select distinct * from tabla1 t1, t2, tabla3 t3           -- 1 SUCCESS
+PARSED SUCCESSFULLY
+
+>> select a, b, c from tabla1 t1, t2,, t3                    -- 2 FAILURE
+== ERROR (Parser): bad token at [1:35] >> , <<
+==== [T] Expected an ID
+PARSING FAILED
+
+>> select a, schema.tables from t where (not "hello")        -- 3 SUCCESS
+PARSED SUCCESSFULLY
+
+>> select a, (1, 2, 3) from t                                -- 4 FAILURE
+== ERROR (Parser): bad token at [1:13] >> , <<
+==== Expected a RPAREN
+== ERROR (Parser): bad token at [1:13] >> , <<
+==== Expected a FROM
+PARSING FAILED
+
+>> select a, "string"(1, 2, "text") from t                   -- 5 SUCCESS
+PARSED SUCCESSFULLY
+
+>> select a b from t where 0                                 -- 6 FAILURE
+== ERROR (Parser): bad token at [1:10] >> b <<
+==== Expected a FROM
+PARSING FAILED
+
+>> select csv.sum(), b from t where (((c <> nil and -true))) -- 7 SUCCESS
+PARSED SUCCESSFULLY
+
+>> select a, b from t where c, d                             -- 8 FAILURE
+PARSING FAILED
+
+>> select col1, col2.a from t where func(1/6+1, 2, 3)        -- 9 SUCCESS
+PARSED SUCCESSFULLY
+
+>> select a from where                                       -- 0 FAILURE
+== ERROR (Parser): bad token at [1:15] >> where <<
+==== [T] Expected an ID
+PARSING FAILED
