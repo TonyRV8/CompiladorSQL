@@ -2,6 +2,7 @@
 //Sánchez Ortega Gabriel
 //Chávez Cruz Adolfo
 //Compiladores 5CV2
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -36,8 +37,13 @@ public class SQLCompi {
             // Parsear los tokens con SQLParser
             SQLParser parser = new SQLParser(tokens);
             try {
-                parser.parseConsulta();
+                QueryStatement ast = parser.parseConsulta();
                 System.out.println("La consulta es válida según la gramática definida.");
+
+                // Imprimir el AST
+                System.out.println("\nAST generado:");
+                PrinterQuery.print(ast);
+
             } catch (RuntimeException e) {
                 System.err.println("Error de sintaxis: " + e.getMessage());
             }

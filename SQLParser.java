@@ -2,8 +2,10 @@
 //Sánchez Ortega Gabriel
 //Chávez Cruz Adolfo
 //Compiladores 5CV2
-import java.util.List;
+
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class SQLParser {
 
@@ -22,6 +24,7 @@ public class SQLParser {
             currentToken = new AnalizadorLexico.Token("EOF", "$(EOF)", -1);
         }
     }
+
     private void match(String expectedType) {
         if (currentToken.tipo.equals(expectedType)) {
             advance();
@@ -30,194 +33,221 @@ public class SQLParser {
         }
     }
 
-    public void parseConsulta() {
+    public QueryStatement parseConsulta() {
         match("SELECT");
-        parseD();
+        SelectStatement select = parseD();
         match("FROM");
-        parseT();
-        parseW();
+        FromStatement from = parseT();
+        WhereStatement where = parseW();
 
         if (currentToken.tipo.equals("SEMICOLON")) {
-            advance(); 
+            advance();
         }
 
         if (!currentToken.tipo.equals("EOF")) {
             throw new RuntimeException("Token inesperado " + currentToken);
         }
+
+        return new QueryStatement(select, from, where);
     }
 
-    private void parseD() {
+    private SelectStatement parseD() {
+        boolean isDistinct = false;
         if (currentToken.tipo.equals("DISTINCT")) {
+            isDistinct = true;
             match("DISTINCT");
         }
-        parseP();
+        List<Expr> columns = parseP();
+        return new SelectStatement(columns, isDistinct);
     }
 
-    private void parseP() {
+    private List<Expr> parseP() {
+        List<Expr> columns = new ArrayList<>();
         if (currentToken.tipo.equals("STAR")) {
             match("STAR");
+            columns.add(new IdExpr("*"));
         } else {
-            parseF();
+            columns.add(parseF());
         }
+        return columns;
     }
 
-    private void parseF() {
-        parseExpr();
-        parseF1();
-    }
-
-    private void parseF1() {
-        if (currentToken.tipo.equals("COMA")) {
+    private Expr parseF() {
+        Expr expr = parseExpr();
+        while (currentToken.tipo.equals("COMA")) {
             match("COMA");
-            parseExpr();
-            parseF1();
+            expr = new BinaryExpr(expr, ",", parseExpr());
         }
+        return expr;
     }
 
-    private void parseT() {
-        parseT1();
-        parseT3();
+    private FromStatement parseT() {
+        List<String> tables = new ArrayList<>();
+        do {
+            tables.add(parseT1());
+        } while (currentToken.tipo.equals("COMA") && advanceMatch("COMA"));
+        return new FromStatement(tables);
     }
 
-    private void parseT1() {
-        match("IDENTIFICADOR"); // Expecting a table identifier
-        parseT2();
-    }
-
-    private void parseT2() {
+    private String parseT1() {
+        String tableName = currentToken.valor;
+        match("IDENTIFICADOR");
         if (currentToken.tipo.equals("IDENTIFICADOR")) {
-            match("IDENTIFICADOR"); // table alias
+            tableName += " " + currentToken.valor;
+            match("IDENTIFICADOR");
         }
+        return tableName;
     }
 
-    private void parseT3() {
-        if (currentToken.tipo.equals("COMA")) {
-            match("COMA");
-            parseT();
+    private boolean advanceMatch(String expectedType) {
+        if (currentToken.tipo.equals(expectedType)) {
+            advance();
+            return true;
         }
+        return false;
     }
 
-     private void parseW() {
+    private WhereStatement parseW() {
         if (currentToken.tipo.equals("WHERE")) {
             match("WHERE");
-            parseExpr();
+            Expr condition = parseExpr();
+            return new WhereStatement(condition);
         }
-    }
-    
-
-    private void parseExpr() {
-        parseLogicOr();
+        return null;
     }
 
-    private void parseLogicOr() {
-        parseLogicAnd();
+    private Expr parseExpr() {
+        return parseLogicOr();
+    }
+
+    private Expr parseLogicOr() {
+        Expr left = parseLogicAnd();
         while (currentToken.tipo.equals("OR")) {
             match("OR");
-            parseLogicAnd();
+            left = new BinaryExpr(left, "OR", parseLogicAnd());
         }
+        return left;
     }
 
-    private void parseLogicAnd() {
-        parseEquality();
+    private Expr parseLogicAnd() {
+        Expr left = parseEquality();
         while (currentToken.tipo.equals("AND")) {
             match("AND");
-            parseEquality();
+            left = new BinaryExpr(left, "AND", parseEquality());
         }
+        return left;
     }
 
-    private void parseEquality() {
-        parseComparison();
-        if (currentToken.tipo.equals("EQ") || currentToken.tipo.equals("NE")) {
+    private Expr parseEquality() {
+        Expr left = parseComparison();
+        while (currentToken.tipo.equals("EQ") || currentToken.tipo.equals("NE")) {
+            String operator = currentToken.tipo.equals("EQ") ? "=" : "!=";
             match(currentToken.tipo);
-            parseComparison();
+            left = new BinaryExpr(left, operator, parseComparison());
         }
+        return left;
     }
 
-    private void parseComparison() {
-        parseTerm();
-        if (currentToken.tipo.equals("LT") || currentToken.tipo.equals("LE") || 
-            currentToken.tipo.equals("GT") || currentToken.tipo.equals("GE")) {
+    private Expr parseComparison() {
+        Expr left = parseTerm();
+        while (currentToken.tipo.equals("LT") || currentToken.tipo.equals("LE") ||
+                currentToken.tipo.equals("GT") || currentToken.tipo.equals("GE")) {
+            String operator = currentToken.tipo;
             match(currentToken.tipo);
-            parseTerm();
+            left = new BinaryExpr(left, operator, parseTerm());
         }
+        return left;
     }
 
-    private void parseTerm() {
-        parseFactor();
+    private Expr parseTerm() {
+        Expr left = parseFactor();
         while (currentToken.tipo.equals("PLUS") || currentToken.tipo.equals("MINUS")) {
+            String operator = currentToken.tipo.equals("PLUS") ? "+" : "-";
             match(currentToken.tipo);
-            parseFactor();
+            left = new BinaryExpr(left, operator, parseFactor());
         }
+        return left;
     }
 
-    private void parseFactor() {
-        parseUnary();
-        while(currentToken.tipo.equals("STAR") || currentToken.tipo.equals("SLASH")) {
+    private Expr parseFactor() {
+        Expr left = parseUnary();
+        while (currentToken.tipo.equals("STAR") || currentToken.tipo.equals("SLASH")) {
+            String operator = currentToken.tipo.equals("STAR") ? "*" : "/";
             match(currentToken.tipo);
-            parseUnary();
+            left = new BinaryExpr(left, operator, parseUnary());
         }
+        return left;
     }
 
-    private void parseUnary() {
-        if (currentToken.tipo.equals("MINUS") || currentToken.tipo.equals("PLUS") || 
-            currentToken.tipo.equals("NOT")) {
+    private Expr parseUnary() {
+        if (currentToken.tipo.equals("NOT") || currentToken.tipo.equals("MINUS")) {
+            String operator = currentToken.tipo.equals("NOT") ? "NOT" : "-";
             match(currentToken.tipo);
+            return new UnaryExpr(operator, parsePrimary());
         }
-        parsePrimary();
+        return parsePrimary();
     }
 
-    private void parsePrimary() {
+    private Expr parsePrimary() {
         switch (currentToken.tipo) {
             case "TRUE":
+                match("TRUE");
+                return new BooleanExpr(true);
             case "FALSE":
+                match("FALSE");
+                return new BooleanExpr(false);
             case "NULL":
+                match("NULL");
+                return new IdExpr("NULL");
             case "NUMERO":
+                String numero = currentToken.valor;
+                match("NUMERO");
+                return new NumExpr(Double.parseDouble(numero));
             case "CADENA":
-                match(currentToken.tipo);
-                if (currentToken.tipo.equals("LEFT_PAREN")) {
-                    parseCall();  // Llama a una función con argumentos
-                } else {
-                    parseAliasOpc();
-                }
-                break;
+                String cadena = currentToken.valor;
+                match("CADENA");
+                return new StringExpr(cadena);
             case "IDENTIFICADOR":
+                String id = currentToken.valor;
                 match("IDENTIFICADOR");
+                Expr base = new IdExpr(id);
                 if (currentToken.tipo.equals("LEFT_PAREN")) {
-                    parseCall();  // Llama a una función con argumentos
-                } else {
-                    parseAliasOpc();
+                    return parseCall(); // Function call
                 }
-                break;
+                return parseAliasOpc(base); // Alias option
             case "LEFT_PAREN":
                 match("LEFT_PAREN");
-                parseExpr();
+                Expr expr = parseExpr();
                 match("RIGHT_PAREN");
-                break;
+                return expr;
             default:
                 throw new RuntimeException("Syntax error: Unexpected token " + currentToken);
         }
     }
+    
 
-    private void parseCall() {
+    private Expr parseCall() {
         match("LEFT_PAREN");
+        List<Expr> arguments = new ArrayList<>();
         if (!currentToken.tipo.equals("RIGHT_PAREN")) {
-            parseExpr(); // First argument if there's one
+            arguments.add(parseExpr()); // First argument if there's one
             while (currentToken.tipo.equals("COMA")) {
                 match("COMA");
-                parseExpr(); // Additional arguments if present
+                arguments.add(parseExpr()); // Additional arguments if present
             }
         }
-    
-        // Match the closing parenthesis
-        if (currentToken.tipo.equals("RIGHT_PAREN")) {
-            match("RIGHT_PAREN");
-        } 
+        match("RIGHT_PAREN"); // Match the closing parenthesis
+        return new CallExpr("FunctionCall", arguments); // Example, replace "FunctionCall" with actual function name if available
     }
 
-    private void parseAliasOpc() {
+    private Expr parseAliasOpc(Expr base) {
         if (currentToken.tipo.equals("DOT")) {
             match("DOT");
-            parsePrimary();
+            String alias = currentToken.valor;
+            match("IDENTIFICADOR");
+            return new BinaryExpr(base, ".", new IdExpr(alias));
         }
+        return base; // No alias, return the base expression
     }
+    
 }

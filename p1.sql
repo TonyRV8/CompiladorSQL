@@ -1,3 +1,1 @@
-
-select , from p        -- 9 SUCCESS
---select a from where                                       -- 0 FAILURE
+SELECT * FROM t WHERE a > 5 and b < 10;
