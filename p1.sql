@@ -1,1 +1,1 @@
-SELECT * FROM t WHERE a > 5 and b < 10;
+select csv.sum(), b from t where (((c <> nil and -true))) -- 7 SUCCESS

@@ -104,3 +104,72 @@ class CallExpr extends Expr {
         return functionName + "(" + arguments.toString() + ")";
     }
 }
+
+// Representa expresiones aritméticas
+class ArithmeticExpr extends Expr {
+    public final Expr left;
+    public final String operator;
+    public final Expr right;
+
+    public ArithmeticExpr(Expr left, String operator, Expr right) {
+        this.left = left;
+        this.operator = operator;
+        this.right = right;
+    }
+
+    @Override
+    public String toString() {
+        return "ArithmeticExpr: " + left + " " + operator + " " + right;
+    }
+}
+
+// Representa expresiones relacionales
+class RelationalExpr extends Expr {
+    public final Expr left;
+    public final String operator;
+    public final Expr right;
+
+    public RelationalExpr(Expr left, String operator, Expr right) {
+        this.left = left;
+        this.operator = operator;
+        this.right = right;
+    }
+
+    @Override
+    public String toString() {
+        return "RelationalExpr: " + left + " " + operator + " " + right;
+    }
+}
+
+// Representa valores literales
+class LiteralExpr extends Expr {
+    public final Object value;
+
+    public LiteralExpr(Object value) {
+        this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return "LiteralExpr: " + value;
+    }
+}
+
+// Representa tablas en el FROM
+class TableExpr extends Expr {
+    public final String tableName;
+    private final String alias;
+
+    public TableExpr(String tableName, String alias) {
+        this.tableName = tableName;
+        this.alias = alias;
+    }
+
+    @Override
+    public String toString() {
+        return alias != null ? tableName + " AS " + alias : tableName;
+    }
+}
+
+
+

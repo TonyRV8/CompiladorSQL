@@ -1,13 +1,14 @@
 import java.util.List;
 
+// Clase base para todas las declaraciones SQL
 public abstract class Statement {
     public abstract void execute();
 }
 
+// Clase para manejar declaraciones SELECT
 class SelectStatement extends Statement {
-    public final List<Expr> columns;
+    private final List<Expr> columns;
     private final boolean isDistinct;
-
 
     public SelectStatement(List<Expr> columns, boolean isDistinct) {
         this.columns = columns;
@@ -22,28 +23,32 @@ class SelectStatement extends Statement {
         return isDistinct;
     }
 
-
     @Override
     public void execute() {
-        System.out.println("Executing SELECT statement...");
+        // Lógica para ejecutar la declaración SELECT
     }
 
     @Override
     public String toString() {
-        return (isDistinct ? "DISTINCT " : "") + "SELECT " + columns.toString();
+        return (isDistinct ? "DISTINCT " : "") + "SELECT " + columns;
     }
 }
 
+// Clase para manejar declaraciones FROM
 class FromStatement extends Statement {
-    public final List<String> tables;
+    private final List<String> tables;
 
     public FromStatement(List<String> tables) {
         this.tables = tables;
     }
 
+    public List<String> getTables() {
+        return tables;
+    }
+
     @Override
     public void execute() {
-        System.out.println("Executing FROM statement...");
+        // Lógica para manejar las tablas en el FROM
     }
 
     @Override
@@ -52,16 +57,21 @@ class FromStatement extends Statement {
     }
 }
 
+// Clase para manejar declaraciones WHERE
 class WhereStatement extends Statement {
-    public final Expr condition;
+    private final Expr condition;
 
     public WhereStatement(Expr condition) {
         this.condition = condition;
     }
 
+    public Expr getCondition() {
+        return condition;
+    }
+
     @Override
     public void execute() {
-        System.out.println("Executing WHERE statement...");
+        // Lógica para manejar la condición WHERE
     }
 
     @Override
@@ -70,10 +80,11 @@ class WhereStatement extends Statement {
     }
 }
 
+// Clase principal que integra SELECT, FROM y WHERE
 class QueryStatement extends Statement {
-    public final SelectStatement select;
-    public final FromStatement from;
-    public final WhereStatement where;
+    private final SelectStatement select;
+    private final FromStatement from;
+    private final WhereStatement where;
 
     public QueryStatement(SelectStatement select, FromStatement from, WhereStatement where) {
         this.select = select;
@@ -81,17 +92,29 @@ class QueryStatement extends Statement {
         this.where = where;
     }
 
+    public SelectStatement getSelect() {
+        return select;
+    }
+
+    public FromStatement getFrom() {
+        return from;
+    }
+
+    public WhereStatement getWhere() {
+        return where;
+    }
+
     @Override
     public void execute() {
-        select.execute();
-        from.execute();
-        if (where != null) {
-            where.execute();
-        }
+        // Implementación específica para ejecutar la consulta si es necesario
     }
 
     @Override
     public String toString() {
-        return select + "\n" + from + (where != null ? "\n" + where : "");
+        return "QueryStatement { " +
+               "select=" + select +
+               ", from=" + from +
+               ", where=" + (where != null ? where : "null") +
+               " }";
     }
 }

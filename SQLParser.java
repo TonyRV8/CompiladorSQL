@@ -1,8 +1,3 @@
-//Ramos Velasco Gabriel Antonio
-//Sánchez Ortega Gabriel
-//Chávez Cruz Adolfo
-//Compiladores 5CV2
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -67,45 +62,58 @@ public class SQLParser {
             match("STAR");
             columns.add(new IdExpr("*"));
         } else {
-            columns.add(parseF());
+            columns.addAll(parseF());
         }
         return columns;
     }
 
-    private Expr parseF() {
-        Expr expr = parseExpr();
+    private List<Expr> parseF() {
+        List<Expr> expressions = new ArrayList<>();
+        expressions.add(parseExpr());
         while (currentToken.tipo.equals("COMA")) {
             match("COMA");
-            expr = new BinaryExpr(expr, ",", parseExpr());
+            expressions.add(parseExpr());
         }
-        return expr;
+        return expressions;
     }
 
     private FromStatement parseT() {
         List<String> tables = new ArrayList<>();
-        do {
-            tables.add(parseT1());
-        } while (currentToken.tipo.equals("COMA") && advanceMatch("COMA"));
+        
+        parseT1(tables);  // Maneja la primera tabla
+        parseT3(tables); 
         return new FromStatement(tables);
     }
 
-    private String parseT1() {
+    private void parseT1(List<String> tables) {
         String tableName = currentToken.valor;
-        match("IDENTIFICADOR");
-        if (currentToken.tipo.equals("IDENTIFICADOR")) {
-            tableName += " " + currentToken.valor;
-            match("IDENTIFICADOR");
+        match("IDENTIFICADOR");  // Nombre de la tabla
+    
+        String alias = parseT2();  // Alias opcional
+        if (alias != null) {
+            tables.add(tableName + " AS " + alias);  // Añade la tabla con alias
+        } else {
+            tables.add(tableName);  // Añade solo el nombre de la tabla
         }
-        return tableName;
+    }
+    
+
+    private String parseT2() {
+        if (currentToken.tipo.equals("IDENTIFICADOR")) {
+            String alias = currentToken.valor;
+            match("IDENTIFICADOR");  // Alias de la tabla
+            return alias;
+        }
+        return null;  // No hay alias
+    }
+    
+    private void parseT3(List<String> tables) {
+            while (currentToken.tipo.equals("COMA")) {
+                match("COMA");
+                parseT1(tables);  // Repite para la siguiente tabla
+        }
     }
 
-    private boolean advanceMatch(String expectedType) {
-        if (currentToken.tipo.equals(expectedType)) {
-            advance();
-            return true;
-        }
-        return false;
-    }
 
     private WhereStatement parseW() {
         if (currentToken.tipo.equals("WHERE")) {
@@ -121,29 +129,39 @@ public class SQLParser {
     }
 
     private Expr parseLogicOr() {
-        Expr left = parseLogicAnd();
+        List<Expr> expressions = new ArrayList<>();
+        expressions.add(parseLogicAnd());
         while (currentToken.tipo.equals("OR")) {
             match("OR");
-            left = new BinaryExpr(left, "OR", parseLogicAnd());
+            expressions.add(parseLogicAnd());
         }
-        return left;
+        if (expressions.size() == 1) {
+            return expressions.get(0);  // Retorna una sola expresión si solo hay una
+        }
+        return new ListExpr("OR", expressions);  // Retorna ListExpr si hay múltiples
     }
+    
 
     private Expr parseLogicAnd() {
-        Expr left = parseEquality();
+        List<Expr> expressions = new ArrayList<>();
+        expressions.add(parseEquality());
         while (currentToken.tipo.equals("AND")) {
             match("AND");
-            left = new BinaryExpr(left, "AND", parseEquality());
+            expressions.add(parseEquality());
         }
-        return left;
+        if (expressions.size() == 1) {
+            return expressions.get(0);  // Retorna una sola expresión si solo hay una
+        }
+        return new ListExpr("AND", expressions);  // Retorna ListExpr si hay múltiples
     }
+    
 
     private Expr parseEquality() {
         Expr left = parseComparison();
         while (currentToken.tipo.equals("EQ") || currentToken.tipo.equals("NE")) {
             String operator = currentToken.tipo.equals("EQ") ? "=" : "!=";
             match(currentToken.tipo);
-            left = new BinaryExpr(left, operator, parseComparison());
+            left = new RelationalExpr(left, operator, parseComparison());
         }
         return left;
     }
@@ -152,9 +170,9 @@ public class SQLParser {
         Expr left = parseTerm();
         while (currentToken.tipo.equals("LT") || currentToken.tipo.equals("LE") ||
                 currentToken.tipo.equals("GT") || currentToken.tipo.equals("GE")) {
-            String operator = currentToken.tipo;
+            String operator = currentToken.valor;
             match(currentToken.tipo);
-            left = new BinaryExpr(left, operator, parseTerm());
+            left = new RelationalExpr(left, operator, parseTerm());
         }
         return left;
     }
@@ -162,9 +180,9 @@ public class SQLParser {
     private Expr parseTerm() {
         Expr left = parseFactor();
         while (currentToken.tipo.equals("PLUS") || currentToken.tipo.equals("MINUS")) {
-            String operator = currentToken.tipo.equals("PLUS") ? "+" : "-";
+            String operator = currentToken.valor;
             match(currentToken.tipo);
-            left = new BinaryExpr(left, operator, parseFactor());
+            left = new ArithmeticExpr(left, operator, parseFactor());
         }
         return left;
     }
@@ -172,9 +190,9 @@ public class SQLParser {
     private Expr parseFactor() {
         Expr left = parseUnary();
         while (currentToken.tipo.equals("STAR") || currentToken.tipo.equals("SLASH")) {
-            String operator = currentToken.tipo.equals("STAR") ? "*" : "/";
+            String operator = currentToken.valor;
             match(currentToken.tipo);
-            left = new BinaryExpr(left, operator, parseUnary());
+            left = new ArithmeticExpr(left, operator, parseUnary());
         }
         return left;
     }
@@ -192,29 +210,33 @@ public class SQLParser {
         switch (currentToken.tipo) {
             case "TRUE":
                 match("TRUE");
-                return new BooleanExpr(true);
+                return new LiteralExpr(true);
             case "FALSE":
                 match("FALSE");
-                return new BooleanExpr(false);
+                return new LiteralExpr(false);
             case "NULL":
                 match("NULL");
-                return new IdExpr("NULL");
+                return new LiteralExpr(null);
             case "NUMERO":
                 String numero = currentToken.valor;
                 match("NUMERO");
-                return new NumExpr(Double.parseDouble(numero));
+                return new LiteralExpr(Double.parseDouble(numero));
             case "CADENA":
                 String cadena = currentToken.valor;
                 match("CADENA");
-                return new StringExpr(cadena);
+                Expr base = new LiteralExpr(cadena);
+                if (currentToken.tipo.equals("LEFT_PAREN")) {
+                    return parseCall(base); // Llama a una función con argumentos
+                }
+                return parseAliasOpc(base); // Maneja alias opcionales
             case "IDENTIFICADOR":
                 String id = currentToken.valor;
                 match("IDENTIFICADOR");
-                Expr base = new IdExpr(id);
+                Expr baseId = new IdExpr(id);
                 if (currentToken.tipo.equals("LEFT_PAREN")) {
-                    return parseCall(); // Function call
+                    return parseCall(baseId); // Llama a una función con argumentos
                 }
-                return parseAliasOpc(base); // Alias option
+                return parseAliasOpc(baseId); // Maneja alias opcionales
             case "LEFT_PAREN":
                 match("LEFT_PAREN");
                 Expr expr = parseExpr();
@@ -226,28 +248,52 @@ public class SQLParser {
     }
     
 
-    private Expr parseCall() {
+    private Expr parseCall(Expr base) {
         match("LEFT_PAREN");
         List<Expr> arguments = new ArrayList<>();
+        
         if (!currentToken.tipo.equals("RIGHT_PAREN")) {
-            arguments.add(parseExpr()); // First argument if there's one
+            arguments.add(parseExpr()); // Primer argumento
             while (currentToken.tipo.equals("COMA")) {
                 match("COMA");
-                arguments.add(parseExpr()); // Additional arguments if present
+                arguments.add(parseExpr()); // Argumentos adicionales
             }
         }
-        match("RIGHT_PAREN"); // Match the closing parenthesis
-        return new CallExpr("FunctionCall", arguments); // Example, replace "FunctionCall" with actual function name if available
+        match("RIGHT_PAREN");
+    
+        if (base instanceof IdExpr) {
+            return new FunctionCallExpr(((IdExpr) base).id, arguments); // Explicita que es una función
+        } else {
+            throw new RuntimeException("Error de sintaxis: La llamada a función es inválida.");
+        }
     }
+    
+    
 
     private Expr parseAliasOpc(Expr base) {
-        if (currentToken.tipo.equals("DOT")) {
-            match("DOT");
-            String alias = currentToken.valor;
-            match("IDENTIFICADOR");
-            return new BinaryExpr(base, ".", new IdExpr(alias));
+        if (currentToken.tipo.equals("DOT")) { 
+            match("DOT"); // Coincide con el punto
+            if (currentToken.tipo.equals("IDENTIFICADOR")) {
+                String field = currentToken.valor;
+                match("IDENTIFICADOR");
+                Expr newBase = new IdExpr(base.toString() + "." + field);
+                
+                // Si después del identificador hay un paréntesis, es una llamada a función
+                if (currentToken.tipo.equals("LEFT_PAREN")) {
+                    return parseCall(newBase);
+                }
+                return newBase; // Devuelve col1.a o csv.sum
+            } else {
+                throw new RuntimeException("Error de sintaxis: Se esperaba un identificador después de '.'");
+            }
         }
-        return base; // No alias, return the base expression
+        // Si hay paréntesis después de un identificador, llama a la función
+        if (currentToken.tipo.equals("LEFT_PAREN")) {
+            return parseCall(base);
+        }
+        return base; // Si no hay punto ni paréntesis, devuelve el identificador base
     }
+    
+    
     
 }

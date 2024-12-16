@@ -1,21 +1,23 @@
-//Ramos Velasco Gabriel Antonio
-//Sánchez Ortega Gabriel
-//Chávez Cruz Adolfo
-//Compiladores 5CV2
+// Ramos Velasco Gabriel Antonio
+// Sánchez Ortega Gabriel
+// Chávez Cruz Adolfo
+// Compiladores 5CV2
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
-import java.util.Scanner;
 
 public class SQLCompi {
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Ingrese la ruta del archivo SQL: ");
-        String filePath = scanner.nextLine();
-        scanner.close();
+        // Verificar si se pasó al menos un argumento
+        if (args.length < 1) {
+            System.err.println("Falta poner la ruta del archivo>");
+            return;
+        }
+
+        String filePath = args[0]; // Ruta del archivo pasada como argumento
 
         try {
             // Leer el archivo
