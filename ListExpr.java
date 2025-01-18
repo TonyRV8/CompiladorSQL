@@ -8,7 +8,7 @@ public class ListExpr extends Expr {
         this.operator = operator;
         this.expressions = expressions;
     }
-
+    
     public String getOperator() {  // Getter para operator
         return operator;
     }
@@ -16,7 +16,7 @@ public class ListExpr extends Expr {
     public List<Expr> getExpressions() {  // Getter para expressions
         return expressions;
     }
-
+    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(operator + ": [");

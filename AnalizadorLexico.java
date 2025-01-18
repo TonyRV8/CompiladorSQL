@@ -22,7 +22,7 @@ public class AnalizadorLexico {
 
     // Operadores aritméticos
     private static final char[] OPERADORES_ARITMETICOS = {'+', '-', '*', '/'};
-
+    
     // Signos de puntuación
     private static final char[] SIGNOS = {',', ';', '.', '(', ')'};
 

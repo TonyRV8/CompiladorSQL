@@ -13,8 +13,12 @@ public class PrinterQuery {
 
         // Imprimir FROM
         System.out.println("  - From:");
-        for (String table : stmt.getFrom().getTables()) {
-            System.out.println("      - TableExpr: " + table);
+        if (stmt.getFrom() != null) {
+            for (String table : stmt.getFrom().getTables()) {
+                System.out.println("      - TableExpr: " + table);
+            }
+        } else {
+            System.out.println("      - null");
         }
 
         // Imprimir WHERE
@@ -31,10 +35,12 @@ public class PrinterQuery {
             return "LiteralExpr: " + ((LiteralExpr) expr).value;
         } else if (expr instanceof ArithmeticExpr) {
             ArithmeticExpr arithmeticExpr = (ArithmeticExpr) expr;
-            return "ArithmeticExpr: " + printExpr(arithmeticExpr.left) + " " + arithmeticExpr.operator + " " + printExpr(arithmeticExpr.right);
+            return "ArithmeticExpr: " + printExpr(arithmeticExpr.left) + " " + arithmeticExpr.operator + " "
+                    + printExpr(arithmeticExpr.right);
         } else if (expr instanceof RelationalExpr) {
             RelationalExpr relationalExpr = (RelationalExpr) expr;
-            return "RelationalExpr: " + printExpr(relationalExpr.left) + " " + relationalExpr.operator + " " + printExpr(relationalExpr.right);
+            return "RelationalExpr: " + printExpr(relationalExpr.left) + " " + relationalExpr.operator + " "
+                    + printExpr(relationalExpr.right);
         } else if (expr instanceof UnaryExpr) {
             UnaryExpr unaryExpr = (UnaryExpr) expr;
             return "UnaryExpr: " + unaryExpr.operator + " " + printExpr(unaryExpr.expr);
@@ -57,17 +63,14 @@ public class PrinterQuery {
             }
             sb.append("]");
             return sb.toString();
-        }
-        else if (expr instanceof FunctionCallExpr) {
+        } else if (expr instanceof FunctionCallExpr) {
             FunctionCallExpr callExpr = (FunctionCallExpr) expr;
             return "FunctionCall: " + callExpr.functionName + "(" + printArguments(callExpr.arguments) + ")";
         }
-        
-        
-        
+
         return "UnknownExpr";
     }
-    
+
     private static String printArguments(List<Expr> arguments) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < arguments.size(); i++) {

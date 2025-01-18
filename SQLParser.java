@@ -31,21 +31,36 @@ public class SQLParser {
     public QueryStatement parseConsulta() {
         match("SELECT");
         SelectStatement select = parseD();
-        match("FROM");
-        FromStatement from = parseT();
-        WhereStatement where = parseW();
-
-        if (currentToken.tipo.equals("SEMICOLON")) {
-            advance();
+    
+        FromStatement from = null; // Inicialización del bloque FROM opcional
+        WhereStatement where = null; // Inicialización del bloque WHERE opcional
+    
+        // Verifica y procesa FROM si está presente
+        if (currentToken.tipo.equals("FROM")) {
+            match("FROM");
+            from = parseT(); // Procesa las tablas
         }
-
+    
+        // Verifica y procesa WHERE si está presente
+        if (currentToken.tipo.equals("WHERE")) {
+            where = parseW(); // Procesa la cláusula WHERE
+        }
+    
+        // Maneja el punto y coma opcional
+        if (currentToken.tipo.equals("SEMICOLON")) {
+            match("SEMICOLON");
+        }
+    
+        // Verifica que el archivo haya terminado correctamente
         if (!currentToken.tipo.equals("EOF")) {
             throw new RuntimeException("Token inesperado " + currentToken);
         }
-
+    
+        // Devuelve la declaración completa
         return new QueryStatement(select, from, where);
-    }
-
+    }    
+    
+    
     private SelectStatement parseD() {
         boolean isDistinct = false;
         if (currentToken.tipo.equals("DISTINCT")) {
