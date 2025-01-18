@@ -10,6 +10,13 @@ public class FunctionCallExpr extends Expr {
     }
 
     @Override
+    public Object evaluate() {
+        // Implementa la lógica para evaluar funciones si es necesario.
+        // Aquí se retorna null como placeholder.
+        return null;
+    }
+
+    @Override
     public String toString() {
         return "FunctionCallExpr: " + functionName + "(" + arguments + ")";
     }

@@ -25,7 +25,13 @@ class SelectStatement extends Statement {
 
     @Override
     public void execute() {
-        // Lógica para ejecutar la declaración SELECT
+        for (Expr column : columns) {
+            // Evaluar la expresión y capturar el resultado
+            Object result = column.evaluate();
+
+            // Imprimir el resultado de la evaluación
+            System.out.println("Resultado: " + result);
+        }
     }
 
     @Override
@@ -106,15 +112,17 @@ class QueryStatement extends Statement {
 
     @Override
     public void execute() {
-        // Implementación específica para ejecutar la consulta si es necesario
+        if (select != null) {
+            select.execute();
+        }
     }
 
     @Override
     public String toString() {
         return "QueryStatement { " +
-               "select=" + select +
-               ", from=" + from +
-               ", where=" + (where != null ? where : "null") +
-               " }";
+                "select=" + select +
+                ", from=" + from +
+                ", where=" + (where != null ? where : "null") +
+                " }";
     }
 }

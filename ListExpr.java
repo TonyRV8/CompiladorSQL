@@ -1,22 +1,29 @@
 import java.util.List;
 
 public class ListExpr extends Expr {
-    private final String operator;  // Operador: "AND", "OR", ","
+    private final String operator; // Operador: "AND", "OR", ","
     private final List<Expr> expressions;
+
+    @Override
+    public Object evaluate() {
+        // Implementa la lógica para evaluar funciones si es necesario.
+        // Aquí se retorna null como placeholder.
+        return null;
+    }
 
     public ListExpr(String operator, List<Expr> expressions) {
         this.operator = operator;
         this.expressions = expressions;
     }
-    
-    public String getOperator() {  // Getter para operator
+
+    public String getOperator() { // Getter para operator
         return operator;
     }
 
-    public List<Expr> getExpressions() {  // Getter para expressions
+    public List<Expr> getExpressions() { // Getter para expressions
         return expressions;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(operator + ": [");

@@ -16,9 +16,9 @@ public class SQLCompi {
             System.err.println("Falta poner la ruta del archivo>");
             return;
         }
-
+    
         String filePath = args[0]; // Ruta del archivo pasada como argumento
-
+    
         try {
             // Leer el archivo
             String input = leerArchivo(filePath);
@@ -26,34 +26,39 @@ public class SQLCompi {
                 System.err.println("No se pudo leer el archivo.");
                 return;
             }
-
+    
             // Generar tokens con el lexer
             List<AnalizadorLexico.Token> tokens = AnalizadorLexico.analizar(input);
-
+    
             // Mostrar los tokens generados
             System.out.println("Tokens generados:");
             for (AnalizadorLexico.Token token : tokens) {
                 System.out.println(token);
             }
-
+    
             // Parsear los tokens con SQLParser
             SQLParser parser = new SQLParser(tokens);
             try {
                 QueryStatement ast = parser.parseConsulta();
                 System.out.println("La consulta es válida según la gramática definida.");
-
+    
                 // Imprimir el AST
                 System.out.println("\nAST generado:");
                 PrinterQuery.print(ast);
-
+    
+                // Ejecutar la consulta y mostrar resultados
+                System.out.println("\nResultado de la consulta:");
+                ast.execute();
+    
             } catch (RuntimeException e) {
                 System.err.println("Error de sintaxis: " + e.getMessage());
             }
-
+    
         } catch (IOException e) {
             System.err.println("Error al leer el archivo: " + e.getMessage());
         }
     }
+    
 
     // Método auxiliar para leer el contenido de un archivo
     private static String leerArchivo(String filePath) throws IOException {
