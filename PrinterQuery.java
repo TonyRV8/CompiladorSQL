@@ -65,7 +65,7 @@ public class PrinterQuery {
             return sb.toString();
         } else if (expr instanceof FunctionCallExpr) {
             FunctionCallExpr callExpr = (FunctionCallExpr) expr;
-            return "FunctionCall: " + callExpr.functionName + "(" + printArguments(callExpr.arguments) + ")";
+            return "FunctionCall: " + callExpr.getFunctionName() + "(" + printArguments(callExpr.getArguments()) + ")";
         }
 
         return "UnknownExpr";

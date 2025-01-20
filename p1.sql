@@ -1,1 +1,1 @@
-SELECT (true + false +3) *4 / 5, 'hola' + 'a' FROM usuarios;
+SELECT sum(edad),max(edad),2+2 from usuarios

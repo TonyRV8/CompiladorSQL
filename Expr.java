@@ -233,7 +233,7 @@ public Object evaluate() {
         case "*":
             return leftNum * rightNum;
         case "/":
-            if (rightNum == 0) throw new ArithmeticException("Division by zero");
+            if (rightNum == 0) throw new ArithmeticException("División entre zero");
             return leftNum / rightNum;
         default:
             throw new IllegalArgumentException("Unknown operator: " + operator);

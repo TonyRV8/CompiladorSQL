@@ -1,12 +1,20 @@
 import java.util.List;
 
 public class FunctionCallExpr extends Expr {
-    public final String functionName;
-    public final List<Expr> arguments;
+    private final String functionName;
+    private final List<Expr> arguments;
 
     public FunctionCallExpr(String functionName, List<Expr> arguments) {
         this.functionName = functionName;
         this.arguments = arguments;
+    }
+
+    public String getFunctionName() {
+        return functionName;
+    }
+
+    public List<Expr> getArguments() {
+        return arguments;
     }
 
     @Override
@@ -18,6 +26,6 @@ public class FunctionCallExpr extends Expr {
 
     @Override
     public String toString() {
-        return "FunctionCallExpr: " + functionName + "(" + arguments + ")";
+        return functionName + "(" + arguments + ")";
     }
 }
